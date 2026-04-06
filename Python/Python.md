@@ -2197,87 +2197,243 @@ import os
 | `os.fork()` | Forks a child process (Unix only) |
 | `os.execvp()` | Replaces the current process with a new one |
 
-## **Wheel Package**
-- A Wheel is a built-package format for Python.
-- It has the .whl extension and is designed to speed up installation by avoiding the need to build packages from source.
+Below are **well‑structured notes on Python Wheel packages**, tailored to your **`setup.py` example**, the **slides you shared**, and your **Databricks / enterprise reuse context**.
 
-Here’s a step-by-step guide to **creating a Wheel package** in Python:
+***
 
-### 🛞 **How to Create a Wheel Package in Python**
+# 📦 Python Wheel Package
 
-### **Step 1: Prepare Your Project Structure**
+## 1. What is a Wheel Package?
 
-Organize your project like this:
+A **Wheel (`.whl`)** is a **built (compiled) Python package format** that allows **fast and consistent installation** of Python libraries without running `setup.py` during install.
 
+👉 In short:
+
+> **Wheel = Install‑ready distribution of a Python package**
+
+***
+
+## 2. Why Wheel Packages are Important (Enterprise Context)
+
+Wheel packages are widely used because they:
+
+*   ✅ Install faster than source distributions (`.tar.gz`)
+*   ✅ Avoid compilation during installation
+*   ✅ Ensure **consistent behavior across environments**
+*   ✅ Are ideal for **Databricks, CI/CD, Airflow, ADF, Docker**
+*   ✅ Easy to upload to **Databricks workspace or Azure Artifacts**
+
+For ENTBI:
+
+> Wheel packages allow **reusable business logic** to be shared across domains and environments.
+
+***
+
+## 3. Pre‑Requisites (from your slide)
+
+Before creating a Wheel package, ensure:
+
+*   ✅ Python is installed
+*   ✅ `pip` is installed (auto-installed for Python ≥ 3.4)
+*   ✅ `setuptools` and `wheel` are installed
+
+```bash
+pip install setuptools wheel
 ```
-my_project/
+
+***
+
+## 4. Typical Project Structure (Based on Your setup)
+
+```text
+entbi_library/
 │
-├── my_package/              # Your actual Python package
-│   └── __init__.py
+├── setup.py
+├── src/
+│   ├── libs/
+│   │   ├── __init__.py
+│   │   └── main.py
+│   │
+│   └── entbi_pkg/
+│       ├── __init__.py
+│       └── main.py
 │
-├── setup.py                 # Build script
-└── README.md                # Optional
+└── dist/
 ```
 
-### **Step 2: Create `setup.py`**
+### Key Points
 
-This file tells Python how to build your package. Example:
+*   `src/` contains all Python source code
+*   `__init__.py` marks directories as packages
+*   `setup.py` is placed **one level above `src`**
+
+***
+
+## 5. Explanation of Your `setup.py`
 
 ```python
-from setuptools import setup, find_packages
-
 setup(
-    name='my_package',
-    version='0.1',
-    packages=find_packages(),
-    install_requires=[],  # Add dependencies here
-    author='Your Name',
-    description='A sample Python package',
+    name="entbi_library",
+    version=datetime.datetime.utcnow().strftime("%Y.%m.%d"),
+    description="Library of curation logic that can be reused across domains",
+    packages=find_packages(where="./src"),
+    package_dir={"": "src"},
+    entry_points={
+        "packages": ["lib=libs.main:main", "entbi_pkg=entbi_pkg.main:main"],
+    },
+    install_requires=["setuptools"],
 )
 ```
 
-### **Step 3: Install Required Tools**
+### Important Fields Explained
 
-Install `setuptools` and `wheel`:
+### ✅ `name`
 
-```bash
-pip install setuptools
-pip install wheel
+```python
+name="entbi_library"
 ```
 
-### **Step 4: Build the Wheel**
+*   Logical package name
+*   Appears in `.whl` file name
+*   Used during installation
 
-Run this command in the root of your project (where `setup.py` is):
+***
 
-```bash
-python setup.py sdist bdist_wheel
+### ✅ `version`
+
+```python
+version=datetime.datetime.utcnow().strftime("%Y.%m.%d")
 ```
 
-This creates two folders:
-- `dist/` → Contains `.whl` and `.tar.gz` files
-- `build/` → Temporary build files
+*   Dynamically generates version (e.g., `2026.04.06`)
+*   Very useful for **daily or pipeline-based builds**
+*   Ensures unique wheel versions
 
-### **Step 5: Install the Wheel (Optional Test)**
+***
 
-You can test your wheel locally:
+### ✅ `packages`
 
-```bash
-pip install dist/my_package-0.1-py3-none-any.whl
+```python
+packages=find_packages(where="./src")
 ```
 
-### **Step 6: Upload to PyPI (Optional)**
+*   Automatically discovers packages under `src/`
+*   Avoids hard‑coding package names
 
-Install `twine`:
+***
 
-```bash
-pip install twine
+### ✅ `package_dir`
+
+```python
+package_dir={"": "src"}
 ```
 
-Upload your package:
+*   Tells Python that all packages are inside `src`
+*   Industry best practice for clean separation
+
+***
+
+### ✅ `entry_points`
+
+```python
+entry_points={
+    "packages": ["lib=libs.main:main", "entbi_pkg=entbi_pkg.main:main"],
+}
+```
+
+*   Defines **callable entry points**
+*   Allows invoking library logic programmatically
+*   Useful for orchestration, CLI hooks, or workflows
+
+***
+
+### ✅ `install_requires`
+
+```python
+install_requires=["setuptools"]
+```
+
+*   Lists runtime dependencies
+*   Additional libs (pandas, pyspark, etc.) can go here
+
+***
+
+## 6. Steps to Create a Wheel Package
+
+### Step 1️⃣ Ensure Code & `__init__.py` Exist
+
+*   All folders must contain `__init__.py`
+*   Can be empty, but must be present
+
+***
+
+### Step 2️⃣ Run Wheel Build Command
 
 ```bash
-twine upload dist/*
+python setup.py bdist_wheel
 ```
+
+This will:
+
+*   Build the package
+*   Create a `.whl` file inside the `dist/` directory
+
+***
+
+### Step 3️⃣ Locate the Wheel File
+
+```text
+dist/
+ └── entbi_library-2026.04.06-py3-none-any.whl
+```
+
+✅ This file is **ready for installation**
+
+***
+
+## 7. Installing a Wheel Package
+
+### Local Installation
+
+```bash
+pip install entbi_library-2026.04.06-py3-none-any.whl
+```
+
+### Databricks Installation
+
+*   Upload `.whl` to:
+    *   Workspace
+    *   DBFS
+    *   Or Azure Blob
+*   Attach to cluster or job
+
+***
+
+## 8. Difference Between Wheel and Source Distribution
+
+| Feature             | Source (`.tar.gz`) | Wheel (`.whl`) |
+| ------------------- | ------------------ | -------------- |
+| Build required      | ✅ Yes              | ❌ No           |
+| Install speed       | Slower             | Faster         |
+| CI/CD friendly      | ⚠️ Limited         | ✅ Excellent    |
+| Databricks friendly | ⚠️ Risky           | ✅ Recommended  |
+
+***
+
+## 9. Best Practices (Enterprise / ENTBI)
+
+✅ Use `src/` layout  
+✅ Automate versioning (as you already do)  
+✅ Exclude `.venv`, `__pycache__`  
+✅ Store wheels in **artifact repository**  
+✅ Do **not** edit wheel manually  
+✅ Rebuild wheel for every release
+
+***
+
+## 10. One‑Line Interview / Documentation Summary
+
+> A Wheel package is a built Python distribution that enables fast, consistent, and production‑ready installation of reusable Python libraries across environments.
 
 # **Data Structures**
 
