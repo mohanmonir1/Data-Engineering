@@ -830,7 +830,8 @@ print(squares)  # Output: {0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25}
 
 ## **Sets**
 - **Definition**: A set is a collection which is unordered, unchangeable*, and unindexed.
-Set items are unchangeable, but you can remove items and add new items.
+Set items are unchangeable, but you can remove items and add new items. It contains unique element.
+- It takes O(1) to search an element
 
 **Note**:   
 1. The values True and 1 are considered the same value in sets, and are treated as duplicates:
@@ -843,6 +844,11 @@ Set items are unchangeable, but you can remove items and add new items.
   s = set()
   ```
 - **Additional Methods**:
+  - `my_set.add(item)`: Adds the item to the set if not exists.
+    ```python
+    my_set.add(1)
+    print(my_set)  # Output: {1, 2, 3, 4.5}
+    ```
   - `my_set.discard(item)`: Removes the item from the set if it exists.
     ```python
     my_set.discard("apple")
